@@ -100,7 +100,12 @@ public class ProductController {
     @GetMapping(value = "test/produits/{prix}")
     public List<Product>  testeDeRequetes(@PathVariable int prix) {
 
-        return productDao.chercherUnProduitCher(400);
+        return productDao.chercherUnProduitCher(prix);
+    }
+
+    @GetMapping(value = "AdminProduits")
+    public List<Product> requeteCalculMarge() {
+        return productDao.calculerMargeProduit();
     }
 
 
