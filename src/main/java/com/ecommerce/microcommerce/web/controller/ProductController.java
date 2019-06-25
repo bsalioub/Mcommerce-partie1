@@ -2,6 +2,7 @@ package com.ecommerce.microcommerce.web.controller;
 
 import com.ecommerce.microcommerce.dao.ProductDao;
 import com.ecommerce.microcommerce.model.Product;
+import com.ecommerce.microcommerce.web.exceptions.ProduitGratuitException;
 import com.ecommerce.microcommerce.web.exceptions.ProduitIntrouvableException;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
@@ -19,7 +20,7 @@ import java.net.URI;
 import java.util.List;
 
 
-@Api( description="API pour es opérations CRUD sur les produits.")
+@Api( description="API pour les opérations CRUD sur les produits.")
 
 @RestController
 public class ProductController {
@@ -67,20 +68,23 @@ public class ProductController {
     //ajouter un produit
     @PostMapping(value = "/Produits")
 
-    public ResponseEntity<Void> ajouterProduit(@Valid @RequestBody Product product) {
+    public ResponseEntity<Void> ajouterProduit (@Valid @RequestBody Product product) throws ProduitGratuitException {
 
-        Product productAdded =  productDao.save(product);
+        if (product.getPrix() > 0) {
+            Product productAdded =  productDao.save(product);
 
-        if (productAdded == null)
+            URI location = ServletUriComponentsBuilder
+                    .fromCurrentRequest()
+                    .path("/{id}")
+                    .buildAndExpand(productAdded.getId())
+                    .toUri();
+
+            return ResponseEntity.created(location).build();
+        } else if (product == null) {
             return ResponseEntity.noContent().build();
-
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentRequest()
-                .path("/{id}")
-                .buildAndExpand(productAdded.getId())
-                .toUri();
-
-        return ResponseEntity.created(location).build();
+        } else {
+            throw new ProduitGratuitException("Le produit avec l'id " + product.getPrix() + " n'a pas de prix de vente, veuillez entrer un prix de vente");
+        }
     }
 
     @DeleteMapping (value = "/Produits/{id}")
@@ -90,8 +94,8 @@ public class ProductController {
     }
 
     @PutMapping (value = "/Produits")
-    public void updateProduit(@RequestBody Product product) {
-
+    public void updateProduit(@RequestBody Product product) throws ProduitGratuitException{
+        if (product.getPrix() == 0) throw new ProduitGratuitException("Le produit avec l'id " + product.getId() + " n'a pas de prix de vente");
         productDao.save(product);
     }
 
